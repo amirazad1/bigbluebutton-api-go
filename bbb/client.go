@@ -14,6 +14,14 @@ import (
 	"time"
 )
 
+// APIResponse represents a basic API response from BigBlueButton
+type APIResponse struct {
+	ReturnCode string `xml:"returncode"`
+	Version    string `xml:"version"`
+	Message    string `xml:"message,omitempty"`
+	MessageKey string `xml:"messageKey,omitempty"`
+}
+
 // Client represents a BigBlueButton API client.
 type Client struct {
 	baseURL    string
@@ -72,6 +80,21 @@ func (c *Client) generateChecksum(apiCall string, params url.Values) string {
 	sha := sha1.New()
 	sha.Write([]byte(apiCall + queryString + c.secret))
 	return hex.EncodeToString(sha.Sum(nil))
+}
+
+// GetAPIVersion returns the version of the BigBlueButton server.
+func (c *Client) GetAPIVersion(ctx context.Context) (string, error) {
+	var response APIResponse
+
+	if err := c.doRequest(ctx, "api", url.Values{}, &response); err != nil {
+		return "", fmt.Errorf("failed to get API version: %w", err)
+	}
+
+	if response.ReturnCode != "SUCCESS" {
+		return "", fmt.Errorf("API error: %s", response.Message)
+	}
+
+	return response.Version, nil
 }
 
 // doRequest performs an HTTP request to the BigBlueButton API.
