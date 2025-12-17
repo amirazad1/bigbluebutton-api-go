@@ -7,7 +7,7 @@ import (
 	"encoding/hex"
 	"encoding/xml"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -103,38 +103,45 @@ func (c *Client) GetAPIVersion(ctx context.Context) (string, error) {
 }
 
 // doRequest performs an HTTP request to the BigBlueButton API.
-func (c *Client) doRequest(ctx context.Context, apiCall string, params url.Values, result interface{}) error {
-	// Add checksum to parameters
-	checksum := c.generateChecksum(apiCall, params)
-	params.Set("checksum", checksum)
-
-	// Build URL
-	apiURL := fmt.Sprintf("%sapi/%s?%s", c.baseURL, apiCall, params.Encode())
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiURL, nil)
-	if err != nil {
-		return fmt.Errorf("creating request: %w", err)
-	}
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("executing request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("reading response body: %w", err)
-	}
-
-	// Parse XML response
-	if err := xml.Unmarshal(body, result); err != nil {
-		return fmt.Errorf("unmarshaling response: %w", err)
-	}
-
-	return nil
+func (c *Client) doRequest(ctx context.Context, action string, params url.Values, result interface{}) error {
+    // Build the URL with the correct API path
+    u := fmt.Sprintf("%sapi/%s", c.baseURL, action)
+    
+    // Add checksum to parameters
+    checksum := c.generateChecksum(action, params)
+    params.Set("checksum", checksum)
+    
+    // Build the full URL with query parameters
+    fullURL := fmt.Sprintf("%s?%s", u, params.Encode())
+    
+    // Create the request
+    req, err := http.NewRequestWithContext(ctx, "GET", fullURL, nil)
+    if err != nil {
+        return fmt.Errorf("creating request: %w", err)
+    }
+    
+    // Make the request
+    resp, err := c.httpClient.Do(req)
+    if err != nil {
+        return fmt.Errorf("making request: %w", err)
+    }
+    defer resp.Body.Close()
+    
+    // Check status code
+    if resp.StatusCode != http.StatusOK {
+        return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+    }
+    
+    // Read and parse the response
+    body, err := ioutil.ReadAll(resp.Body)
+    if err != nil {
+        return fmt.Errorf("reading response body: %w", err)
+    }
+    
+    // Parse the XML response
+    if err := xml.Unmarshal(body, result); err != nil {
+        return fmt.Errorf("parsing response: %w", err)
+    }
+    
+    return nil
 }
