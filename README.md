@@ -36,27 +36,54 @@ import (
 	"time"
 
 	"github.com/amirazad1/bigbluebutton-api-go/bbb"
+	"github.com/amirazad1/bigbluebutton-api-go/bbb/requests"
 )
 
 func main() {
 	// Initialize client
 	client, err := bbb.NewClient(
-		"https://your-bbb-server.com/bigbluebutton/",
-		"your-secret-here",
+		"https://domain/bigbluebutton",
+		"secret-key",
 		bbb.WithTimeout(10*time.Second),
 	)
 	if err != nil {
 		log.Fatalf("Failed to create client: %v", err)
-	}
+	}	
 
-	// Example: Get server version
-	version, err := client.GetAPIVersion(context.Background())
+	fmt.Printf("BigBlueButton Create Meeting API...\n")
+	meeting , err := client.CreateMeeting(context.Background(), &requests.CreateMeetingRequest{
+		Name:            "Team Meeting",
+		MeetingID:       "meeting-123",
+		AttendeePW:      "ap",
+		ModeratorPW:     "mp",
+		Welcome:         "Welcome to our team meeting!",
+		Record:          true,
+		MaxParticipants: 50,
+		Meta: map[string]string{
+			"meeting-purpose": "weekly-sync",
+		},
+	})
 	if err != nil {
-		log.Fatalf("Failed to get API version: %v", err)
+		log.Fatalf("Failed to create meeting: %v", err)
 	}
-
-	fmt.Printf("BigBlueButton API Version: %s\n", version)
+    fmt.Printf("Meeting created... \n"
+    fmt.Printf("Meeting ID: %s\n", meeting.MeetingID)
+	fmt.Printf("BigBlueButton Join Meeting API...\n")
+	joinURL, err := client.JoinMeeting(context.Background(), &requests.JoinMeetingRequest{
+		MeetingID: meeting.MeetingID,
+		Password:  "mp", // Moderator password (use "ap" for attendees)
+		FullName:  "John Doe",
+		UserID:    "user-123",
+		UserData: map[string]string{
+			"role": "moderator",
+		},
+	})
+	fmt.Printf("Join Url: %s\n", joinURL)
+	if err != nil {
+		log.Fatalf("Failed to generate join URL: %v", err)
+	}
 }
+
 ```
 
 ## API Coverage

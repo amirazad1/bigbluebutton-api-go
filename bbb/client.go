@@ -14,14 +14,6 @@ import (
 	"time"
 )
 
-// APIResponse represents a basic API response from BigBlueButton
-type APIResponse struct {
-	ReturnCode string `xml:"returncode"`
-	Version    string `xml:"version"`
-	Message    string `xml:"message,omitempty"`
-	MessageKey string `xml:"messageKey,omitempty"`
-}
-
 // Client represents a BigBlueButton API client.
 type Client struct {
 	baseURL    string
@@ -38,11 +30,10 @@ func NewClient(baseURL, secret string, options ...Option) (*Client, error) {
 	if !strings.HasSuffix(baseURL, "/") {
 		baseURL += "/"
 	}
-
-	// Ensure the URL ends with 'api/'
-    if !strings.HasSuffix(baseURL, "api/") {
-        baseURL += "api/"
-    }
+	
+	if !strings.HasSuffix(baseURL, "api/") {
+		baseURL += "api/"
+	}	
 
 	// Create default client
 	c := &Client{
@@ -87,25 +78,10 @@ func (c *Client) generateChecksum(apiCall string, params url.Values) string {
 	return hex.EncodeToString(sha.Sum(nil))
 }
 
-// GetAPIVersion returns the version of the BigBlueButton server.
-func (c *Client) GetAPIVersion(ctx context.Context) (string, error) {
-	var response APIResponse
-
-	if err := c.doRequest(ctx, "api", url.Values{}, &response); err != nil {
-		return "", fmt.Errorf("failed to get API version: %w", err)
-	}
-
-	if response.ReturnCode != "SUCCESS" {
-		return "", fmt.Errorf("API error: %s", response.Message)
-	}
-
-	return response.Version, nil
-}
-
 // doRequest performs an HTTP request to the BigBlueButton API.
 func (c *Client) doRequest(ctx context.Context, action string, params url.Values, result interface{}) error {
     // Build the URL with the correct API path
-    u := fmt.Sprintf("%sapi/%s", c.baseURL, action)
+    u := fmt.Sprintf("%s%s", c.baseURL, action)
     
     // Add checksum to parameters
     checksum := c.generateChecksum(action, params)
@@ -113,6 +89,9 @@ func (c *Client) doRequest(ctx context.Context, action string, params url.Values
     
     // Build the full URL with query parameters
     fullURL := fmt.Sprintf("%s?%s", u, params.Encode())
+    
+    // Print the URL for debugging (remove in production)
+    fmt.Printf("Making request to: %s\n", fullURL)
     
     // Create the request
     req, err := http.NewRequestWithContext(ctx, "GET", fullURL, nil)
@@ -127,20 +106,24 @@ func (c *Client) doRequest(ctx context.Context, action string, params url.Values
     }
     defer resp.Body.Close()
     
-    // Check status code
-    if resp.StatusCode != http.StatusOK {
-        return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
-    }
-    
-    // Read and parse the response
+    // Read the response body for error details
     body, err := ioutil.ReadAll(resp.Body)
     if err != nil {
         return fmt.Errorf("reading response body: %w", err)
     }
     
+    // Print the response status and body for debugging
+    fmt.Printf("Response Status: %d\n", resp.StatusCode)
+    fmt.Printf("Response Body: %s\n", string(body))
+    
+    // Check status code
+    if resp.StatusCode != http.StatusOK {
+        return fmt.Errorf("unexpected status code: %d, response: %s", resp.StatusCode, string(body))
+    }
+    
     // Parse the XML response
     if err := xml.Unmarshal(body, result); err != nil {
-        return fmt.Errorf("parsing response: %w", err)
+        return fmt.Errorf("parsing response: %w, response body: %s", err, string(body))
     }
     
     return nil
