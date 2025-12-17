@@ -39,6 +39,11 @@ func NewClient(baseURL, secret string, options ...Option) (*Client, error) {
 		baseURL += "/"
 	}
 
+	// Ensure the URL ends with 'api/'
+    if !strings.HasSuffix(baseURL, "api/") {
+        baseURL += "api/"
+    }
+
 	// Create default client
 	c := &Client{
 		baseURL: baseURL,
