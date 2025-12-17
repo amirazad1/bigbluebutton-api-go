@@ -14,6 +14,9 @@ A Go client library for interacting with the BigBlueButton API.
 - Comprehensive error handling
 - Well-documented code with examples
 - 100% test coverage
+- Full meeting management (create, join, end, get info)
+- Complete recordings management
+- Webhooks support for event notifications
 
 ## Installation
 
@@ -60,18 +63,123 @@ func main() {
 
 ### Meetings
 - [x] Create meeting
-- [ ] Join meeting
-- [ ] End meeting
-- [ ] Get meeting info
-- [ ] Get meetings
-- [ ] Get recordings
-- [ ] Publish/unpublish recordings
-- [ ] Delete recordings
+- [x] Join meeting
+- [x] End meeting
+- [x] Get meeting info
+- [x] List all meetings
+- [x] Check if meeting is running
+
+### Recordings
+- [x] Get recordings
+- [x] Publish/unpublish recordings
+- [x] Delete recordings
+- [x] Update recording metadata
 
 ### Webhooks
-- [ ] Create hook
-- [ ] Get hooks
-- [ ] Destroy hook
+- [x] Create hook
+- [x] List all hooks
+- [x] List hooks for meeting
+- [x] Update hook
+- [x] Destroy hook
+
+## Usage Examples
+
+### Create a Meeting
+
+```go
+meeting, err := client.CreateMeeting(context.Background(), &requests.CreateMeetingRequest{
+    Name:           "Team Meeting",
+    MeetingID:      "meeting-123",
+    AttendeePW:     "ap",
+    ModeratorPW:    "mp",
+    Welcome:        "Welcome to our team meeting!",
+    Record:         true,
+    MaxParticipants: 50,
+    Meta: map[string]string{
+        "meeting-purpose": "weekly-sync",
+    },
+})
+if err != nil {
+    log.Fatalf("Failed to create meeting: %v", err)
+}
+```
+
+### Join a Meeting
+
+```go
+joinURL, err := client.JoinMeeting(context.Background(), &requests.JoinMeetingRequest{
+    MeetingID: "meeting-123",
+    Password:  "mp", // Moderator password (use "ap" for attendees)
+    FullName:  "John Doe",
+    UserID:    "user-123",
+    UserData: map[string]string{
+        "role": "moderator",
+    },
+})
+if err != nil {
+    log.Fatalf("Failed to generate join URL: %v", err)
+}
+// Redirect user to joinURL
+```
+
+### Manage Recordings
+
+```go
+// Get all recordings
+recordings, err := client.GetRecordings(context.Background(), &requests.GetRecordingsRequest{
+    MeetingID: "meeting-123",
+    State:     "any",
+})
+
+// Publish a recording
+_, err = client.PublishRecordings(context.Background(), &requests.PublishRecordingsRequest{
+    RecordID: "recording-123",
+    Publish:  true,
+})
+
+// Delete a recording
+_, err = client.DeleteRecordings(context.Background(), "recording-123")
+```
+
+### Webhooks
+
+```go
+// Create a webhook
+hook, err := client.CreateHook(context.Background(), &requests.CreateHookRequest{
+    CallbackURL: "https://your-server.com/webhook",
+    MeetingID:   "meeting-123", // Omit for global webhook
+    GetRaw:      true,
+    Meta: map[string]string{
+        "description": "Webhook for meeting events",
+    },
+})
+
+// List all webhooks
+hooks, err := client.ListHooks(context.Background())
+
+// Remove a webhook
+_, err = client.DestroyHook(context.Background(), "hook-123")
+```
+
+## Webhook Payload Example
+
+When an event occurs, your webhook URL will receive a POST request with a JSON payload like:
+
+```json
+{
+  "header": {
+    "name": "meeting-created",
+    "timestamp": "2023-01-01T00:00:00Z"
+  },
+  "payload": {
+    "meeting": {
+      "id": "meeting-123",
+      "name": "Test Meeting",
+      "recorded": true
+    }
+  }
+}
+```
 
 ## Documentation
 
