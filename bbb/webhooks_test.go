@@ -3,7 +3,6 @@ package bbb_test
 import (
 	"context"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/amirazad1/bigbluebutton-api-go/bbb"
@@ -12,15 +11,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// -------------------- CreateWebhook --------------------
 func TestCreateWebhook(t *testing.T) {
-	// Setup test server
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Verify request
+	client := bbb.NewTestClient(t, func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "/api/hooks/create", r.URL.Path)
 		assert.Equal(t, "https://example.com/callback", r.URL.Query().Get("callbackURL"))
 		assert.Equal(t, "meeting_ended", r.URL.Query().Get("meetingID"))
 
-		// Respond with success
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`
 		<response>
@@ -30,36 +27,26 @@ func TestCreateWebhook(t *testing.T) {
 		  <meetingID>meeting_ended</meetingID>
 		  <permanentHook>false</permanentHook>
 		</response>`))
-	}))
-	defer ts.Close()
+	})
 
-	// Create client with test server URL
-	client, err := bbb.NewClient(ts.URL, "test-secret")
-	require.NoError(t, err)
-
-	// Test data
 	req := &requests.CreateHookRequest{
 		CallbackURL: "https://example.com/callback",
 		MeetingID:   "meeting_ended",
 	}
 
-	// Execute
 	resp, err := client.CreateHook(context.Background(), req)
 
-	// Verify
 	require.NoError(t, err)
 	assert.Equal(t, "SUCCESS", resp.ReturnCode)
 	assert.Equal(t, "hook-123", resp.HookID)
 	assert.Equal(t, "https://example.com/callback", req.CallbackURL)
 }
 
+// -------------------- ListWebhooks --------------------
 func TestListWebhooks(t *testing.T) {
-	// Setup test server
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Verify request
+	client := bbb.NewTestClient(t, func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "/api/hooks/list", r.URL.Path)
 
-		// Respond with sample webhooks data
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`
 		<response>
@@ -73,17 +60,10 @@ func TestListWebhooks(t *testing.T) {
 		    </hook>
 		  </hooks>
 		</response>`))
-	}))
-	defer ts.Close()
+	})
 
-	// Create client with test server URL
-	client, err := bbb.NewClient(ts.URL, "test-secret")
-	require.NoError(t, err)
-
-	// Execute
 	resp, err := client.ListHooks(context.Background())
 
-	// Verify
 	require.NoError(t, err)
 	assert.Equal(t, "SUCCESS", resp.ReturnCode)
 	require.Len(t, resp.Hooks, 1)
@@ -91,30 +71,20 @@ func TestListWebhooks(t *testing.T) {
 	assert.Equal(t, "https://example.com/callback", resp.Hooks[0].CallbackURL)
 }
 
+// -------------------- DestroyWebhook --------------------
 func TestDestroyWebhook(t *testing.T) {
-	// Setup test server
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Verify request
+	client := bbb.NewTestClient(t, func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "/api/hooks/destroy", r.URL.Path)
 		assert.Equal(t, "hook-123", r.URL.Query().Get("hookID"))
 
-		// Respond with success
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`<response><returncode>SUCCESS</returncode><removed>true</removed></response>`))
-	}))
-	defer ts.Close()
+	})
 
-	// Create client with test server URL
-	client, err := bbb.NewClient(ts.URL, "test-secret")
-	require.NoError(t, err)
-
-	// Test data
 	hookID := "hook-123"
 
-	// Execute
 	resp, err := client.DestroyHook(context.Background(), hookID)
 
-	// Verify
 	require.NoError(t, err)
 	assert.Equal(t, "SUCCESS", resp.ReturnCode)
 	assert.True(t, resp.Removed)

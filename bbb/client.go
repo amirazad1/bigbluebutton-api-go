@@ -12,6 +12,7 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -130,6 +131,17 @@ func (c *Client) doRequest(ctx context.Context, action string, params url.Values
 	// Parse the XML response
 	if err := xml.Unmarshal(body, result); err != nil {
 		return fmt.Errorf("parsing response: %w, response body: %s", err, string(body))
+	}
+
+	// Check for FAILED return code in the response
+	if response, ok := result.(interface{ GetReturnCode() string }); ok {
+		if returnCode := response.GetReturnCode(); returnCode == "FAILED" {
+			// If we have a message field, include it in the error
+			if responseWithMsg, ok := result.(interface{ GetMessage() string }); ok {
+				return fmt.Errorf("API request failed: %s", responseWithMsg.GetMessage())
+			}
+			return errors.New("API request failed")
+		}
 	}
 
 	return nil

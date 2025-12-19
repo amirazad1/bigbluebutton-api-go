@@ -7,28 +7,26 @@ package responses
 
 // CreateMeetingResponse represents the response from the create meeting API
 type CreateMeetingResponse struct {
-	ReturnCode           string `xml:"returncode"`
-	MeetingID            string `xml:"meetingID"`
-	InternalID           string `xml:"internalMeetingID"`
-	ParentID             string `xml:"parentMeetingID"`
-	AttendeePW           string `xml:"attendeePW"`
-	ModeratorPW          string `xml:"moderatorPW"`
-	CreateTime           string `xml:"createTime"`
-	VoiceBridge          string `xml:"voiceBridge"`
-	DialNumber           string `xml:"dialNumber"`
-	CreateDate           string `xml:"createDate"`
-	HasUserJoined        bool   `xml:"hasUserJoined"`
-	Duration             int    `xml:"duration"`
-	HasBeenForciblyEnded bool   `xml:"hasBeenForciblyEnded"`
-	MessageKey           string `xml:"messageKey"`
-	Message              string `xml:"message"`
+	BaseResponseImpl
+	MeetingID     string `xml:"meetingID"`
+	InternalID    string `xml:"internalMeetingID"`
+	ParentID      string `xml:"parentMeetingID"`
+	AttendeePW    string `xml:"attendeePW"`
+	ModeratorPW   string `xml:"moderatorPW"`
+	CreateTime    string `xml:"createTime"`
+	VoiceBridge   string `xml:"voiceBridge"`
+	DialNumber    string `xml:"dialNumber"`
+	CreateDate    string `xml:"createDate"`
+	HasUserJoined bool   `xml:"hasUserJoined"`
+	Duration      int    `xml:"duration"`
 }
 
 // JoinMeetingResponse represents the response from the join meeting API
 type JoinMeetingResponse struct {
+	BaseResponseImpl
 	UserID       string `xml:"user_id"`
 	MeetingID    string `xml:"meeting_id"`
-	UserToken    string `xml:"auth_token"`
+	AuthToken    string `xml:"auth_token"`
 	SessionToken string `xml:"session_token"`
 	GuestStatus  string `xml:"guestStatus"`
 	URL          string `xml:"url"`
@@ -36,14 +34,12 @@ type JoinMeetingResponse struct {
 
 // EndMeetingResponse represents the response from the end meeting API
 type EndMeetingResponse struct {
-	ReturnCode string `xml:"returncode"`
-	MessageKey string `xml:"messageKey"`
-	Message    string `xml:"message"`
+	BaseResponseImpl
 }
 
 // GetMeetingInfoResponse represents the response from the get meeting info API
 type GetMeetingInfoResponse struct {
-	ReturnCode            string            `xml:"returncode"`
+	BaseResponseImpl
 	MeetingName           string            `xml:"meetingName"`
 	MeetingID             string            `xml:"meetingID"`
 	InternalID            string            `xml:"internalMeetingID"`
@@ -93,8 +89,6 @@ type Meeting struct {
 
 // GetMeetingsResponse represents the response from the getMeetings API
 type GetMeetingsResponse struct {
-	ReturnCode string    `xml:"returncode"`
-	Meetings   []Meeting `xml:"meetings>meeting"`
-	MessageKey string    `xml:"messageKey,omitempty"`
-	Message    string    `xml:"message,omitempty"`
+	BaseResponseImpl
+	Meetings []Meeting `xml:"meetings>meeting"`
 }

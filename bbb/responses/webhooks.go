@@ -7,18 +7,14 @@ package responses
 
 // CreateHookResponse represents the response from creating a webhook
 type CreateHookResponse struct {
-	ReturnCode string `xml:"returncode"`
-	HookID     string `xml:"hookID"`
-	MessageKey string `xml:"messageKey,omitempty"`
-	Message    string `xml:"message,omitempty"`
+	BaseResponseImpl
+	HookID string `xml:"hookID"`
 }
 
 // HooksResponse represents a list of webhooks
 type HooksResponse struct {
-	ReturnCode string        `xml:"returncode"`
-	Hooks      []HookDetails `xml:"hooks>hook"`
-	MessageKey string        `xml:"messageKey,omitempty"`
-	Message    string        `xml:"message,omitempty"`
+	BaseResponseImpl
+	Hooks []HookDetails `xml:"hooks>hook"`
 }
 
 // HookDetails represents detailed information about a webhook
@@ -34,8 +30,6 @@ type HookDetails struct {
 
 // DestroyHookResponse represents the response from destroying a webhook
 type DestroyHookResponse struct {
-	ReturnCode string `xml:"returncode"`
-	Removed    bool   `xml:"removed"`
-	MessageKey string `xml:"messageKey,omitempty"`
-	Message    string `xml:"message,omitempty"`
+	BaseResponseImpl
+	Removed bool `xml:"removed"`
 }

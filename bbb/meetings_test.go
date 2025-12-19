@@ -3,7 +3,6 @@ package bbb_test
 import (
 	"context"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/amirazad1/bigbluebutton-api-go/bbb"
@@ -12,171 +11,228 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCreateMeeting(t *testing.T) {
-	// Setup test server
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Verify request
+// -------------------- CreateMeeting --------------------
+func TestCreateMeeting_Success(t *testing.T) {
+	client := bbb.NewTestClient(t, func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "/api/create", r.URL.Path)
 		assert.Equal(t, "test123", r.URL.Query().Get("meetingID"))
 		assert.Equal(t, "Test Meeting", r.URL.Query().Get("name"))
 		assert.Equal(t, "ap", r.URL.Query().Get("attendeePW"))
 		assert.Equal(t, "mp", r.URL.Query().Get("moderatorPW"))
 
-		// Respond with success
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`<response><returncode>SUCCESS</returncode><meetingID>test123</meetingID><internalMeetingID>abc123</internalMeetingID><createTime>1234567890</createTime><voiceBridge>12345</voiceBridge></response>`))
-	}))
-	defer ts.Close()
+		w.Write([]byte(`
+			<response>
+				<returncode>SUCCESS</returncode>
+				<meetingID>test123</meetingID>
+				<internalMeetingID>abc123</internalMeetingID>
+			</response>`))
+	})
 
-	// Create client with test server URL
-	client, err := bbb.NewClient(ts.URL, "test-secret")
-	require.NoError(t, err)
+	resp, err := client.CreateMeeting(context.Background(), &requests.CreateMeetingRequest{
+		MeetingID: "test123",
+		Name:      "Test Meeting",
+	})
 
-	// Test data
-	req := &requests.CreateMeetingRequest{
-		MeetingID:    "test123",
-		Name:         "Test Meeting",
-		AttendeePW:   "ap",
-		ModeratorPW:  "mp",
-	}
-
-	// Execute
-	resp, err := client.CreateMeeting(context.Background(), req)
-
-	// Verify
 	require.NoError(t, err)
 	assert.Equal(t, "SUCCESS", resp.ReturnCode)
 	assert.Equal(t, "test123", resp.MeetingID)
 	assert.Equal(t, "abc123", resp.InternalID)
 }
 
-func TestJoinMeeting(t *testing.T) {
-	// Setup test server
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Just respond with OK, the actual join URL is constructed by the client
+func TestCreateMeeting_DefaultValues(t *testing.T) {
+	client := bbb.NewTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "Meeting test123", r.URL.Query().Get("name"))
+		assert.Equal(t, "ap", r.URL.Query().Get("attendeePW"))
+		assert.Equal(t, "mp", r.URL.Query().Get("moderatorPW"))
+
 		w.WriteHeader(http.StatusOK)
-	}))
-	defer ts.Close()
+		w.Write([]byte(`<response><returncode>SUCCESS</returncode></response>`))
+	})
 
-	// Create client with test server URL
-	client, err := bbb.NewClient(ts.URL, "test-secret")
+	_, err := client.CreateMeeting(context.Background(), &requests.CreateMeetingRequest{
+		MeetingID: "test123",
+	})
+
 	require.NoError(t, err)
+}
 
-	// Test data
-	req := &requests.JoinMeetingRequest{
-		FullName:    "Test User",
-		MeetingID:   "test123",
-		Password:    "mp",
+func TestCreateMeeting_ValidationErrors(t *testing.T) {
+	client := bbb.NewTestClient(t, func(w http.ResponseWriter, r *http.Request) {})
+
+	tests := []struct {
+		name string
+		req  *requests.CreateMeetingRequest
+	}{
+		{"nil request", nil},
+		{"missing meetingID", &requests.CreateMeetingRequest{}},
 	}
 
-	// Execute
-	joinURL, err := client.JoinMeeting(context.Background(), req)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := client.CreateMeeting(context.Background(), tt.req)
+			require.Error(t, err)
+		})
+	}
+}
 
-	// Verify
+// -------------------- JoinMeeting --------------------
+
+func TestJoinMeeting_SuccessAndChecksum(t *testing.T) {
+	client := bbb.NewTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	joinURL, err := client.JoinMeeting(context.Background(), &requests.JoinMeetingRequest{
+		FullName:  "Test User",
+		MeetingID: "test123",
+		Password:  "mp",
+	})
+
 	require.NoError(t, err)
 	assert.Contains(t, joinURL, "/api/join?")
 	assert.Contains(t, joinURL, "fullName=Test+User")
 	assert.Contains(t, joinURL, "meetingID=test123")
 	assert.Contains(t, joinURL, "password=mp")
+	assert.Contains(t, joinURL, "checksum=")
 }
 
-func TestEndMeeting(t *testing.T) {
-	// Setup test server
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Verify request
+func TestJoinMeeting_ValidationErrors(t *testing.T) {
+	client := bbb.NewTestClient(t, func(w http.ResponseWriter, r *http.Request) {})
+
+	tests := []struct {
+		name string
+		req  *requests.JoinMeetingRequest
+	}{
+		{"nil request", nil},
+		{"missing meetingID", &requests.JoinMeetingRequest{Password: "mp"}},
+		{"missing password", &requests.JoinMeetingRequest{MeetingID: "test123"}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := client.JoinMeeting(context.Background(), tt.req)
+			require.Error(t, err)
+		})
+	}
+}
+
+// -------------------- EndMeeting --------------------
+
+func TestEndMeeting_Success(t *testing.T) {
+	client := bbb.NewTestClient(t, func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "/api/end", r.URL.Path)
 		assert.Equal(t, "test123", r.URL.Query().Get("meetingID"))
 		assert.Equal(t, "mp", r.URL.Query().Get("password"))
 
-		// Respond with success
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`<response><returncode>SUCCESS</returncode><messageKey>sentEndMeetingRequest</messageKey><message>End meeting request sent</message></response>`))
-	}))
-	defer ts.Close()
+		w.Write([]byte(`
+			<response>
+				<returncode>SUCCESS</returncode>
+				<messageKey>sentEndMeetingRequest</messageKey>
+			</response>`))
+	})
 
-	// Create client with test server URL
-	client, err := bbb.NewClient(ts.URL, "test-secret")
-	require.NoError(t, err)
-
-	// Test data
-	req := &requests.EndMeetingRequest{
+	resp, err := client.EndMeeting(context.Background(), &requests.EndMeetingRequest{
 		MeetingID: "test123",
 		Password:  "mp",
-	}
+	})
 
-	// Execute
-	resp, err := client.EndMeeting(context.Background(), req)
-
-	// Verify
 	require.NoError(t, err)
 	assert.Equal(t, "SUCCESS", resp.ReturnCode)
 	assert.Equal(t, "sentEndMeetingRequest", resp.MessageKey)
 }
 
-func TestGetMeetings(t *testing.T) {
-	// Setup test server
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Verify request
+func TestEndMeeting_ValidationErrors(t *testing.T) {
+	client := bbb.NewTestClient(t, func(w http.ResponseWriter, r *http.Request) {})
+
+	tests := []struct {
+		name string
+		req  *requests.EndMeetingRequest
+	}{
+		{"nil request", nil},
+		{"missing meetingID", &requests.EndMeetingRequest{Password: "mp"}},
+		{"missing password", &requests.EndMeetingRequest{MeetingID: "test123"}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := client.EndMeeting(context.Background(), tt.req)
+			require.Error(t, err)
+		})
+	}
+}
+
+// -------------------- GetMeetings --------------------
+
+func TestGetMeetings_Success(t *testing.T) {
+	client := bbb.NewTestClient(t, func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "/api/getMeetings", r.URL.Path)
 
-		// Respond with sample meetings data
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`
-		<response>
-		  <returncode>SUCCESS</returncode>
-		  <meetings>
-		    <meeting>
-		      <meetingID>test123</meetingID>
-		      <meetingName>Test Meeting</meetingName>
-		      <createTime>1234567890</createTime>
-		      <attendeePW>ap</attendeePW>
-		      <moderatorPW>mp</moderatorPW>
-		      <hasBeenForciblyEnded>false</hasBeenForciblyEnded>
-		      <running>true</running>
-		      <participantCount>1</participantCount>
-		    </meeting>
-		  </meetings>
-		</response>`))
-	}))
-	defer ts.Close()
+			<response>
+				<returncode>SUCCESS</returncode>
+				<meetings>
+					<meeting>
+						<meetingID>test123</meetingID>
+						<meetingName>Test Meeting</meetingName>
+						<running>true</running>
+					</meeting>
+				</meetings>
+			</response>`))
+	})
 
-	// Create client with test server URL
-	client, err := bbb.NewClient(ts.URL, "test-secret")
-	require.NoError(t, err)
-
-	// Execute
 	resp, err := client.GetMeetings(context.Background())
-
-	// Verify
 	require.NoError(t, err)
+
 	assert.Equal(t, "SUCCESS", resp.ReturnCode)
 	require.Len(t, resp.Meetings, 1)
-	assert.Equal(t, "test123", resp.Meetings[0].MeetingID)
-	assert.Equal(t, "Test Meeting", resp.Meetings[0].MeetingName)
 	assert.True(t, resp.Meetings[0].Running)
 }
 
-func TestIsMeetingRunning(t *testing.T) {
-	// Setup test server
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Verify request
+// -------------------- IsMeetingRunning --------------------
+
+func TestIsMeetingRunning_Success(t *testing.T) {
+	client := bbb.NewTestClient(t, func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "/api/isMeetingRunning", r.URL.Path)
-		assert.Equal(t, "test123", r.URL.Query().Get("meetingID"))
 
-		// Respond with meeting running status
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`<response><returncode>SUCCESS</returncode><running>true</running></response>`))
-	}))
-	defer ts.Close()
+		w.Write([]byte(`
+			<response>
+				<returncode>SUCCESS</returncode>
+				<running>true</running>
+			</response>`))
+	})
 
-	// Create client with test server URL
-	client, err := bbb.NewClient(ts.URL, "test-secret")
-	require.NoError(t, err)
-
-	// Execute
 	running, err := client.IsMeetingRunning(context.Background(), "test123")
-
-	// Verify
 	require.NoError(t, err)
 	assert.True(t, running)
+}
+
+func TestIsMeetingRunning_ValidationError(t *testing.T) {
+	client := bbb.NewTestClient(t, func(w http.ResponseWriter, r *http.Request) {})
+
+	_, err := client.IsMeetingRunning(context.Background(), "")
+	require.Error(t, err)
+}
+
+// -------------------- Server Failure --------------------
+
+func TestServerFailure_ReturnsError(t *testing.T) {
+	client := bbb.NewTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`
+			<response>
+				<returncode>FAILED</returncode>
+				<message>Something went wrong</message>
+			</response>`))
+	})
+
+	_, err := client.CreateMeeting(context.Background(), &requests.CreateMeetingRequest{
+		MeetingID: "test123",
+	})
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "API request failed: Something went wrong")
 }

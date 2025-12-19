@@ -55,32 +55,24 @@ type RecordingPlayback struct {
 
 // GetRecordingsResponse represents the response from the getRecordings API
 type GetRecordingsResponse struct {
-	ReturnCode string      `xml:"returncode"`
+	BaseResponseImpl
 	Recordings []Recording `xml:"recordings>recording"`
-	MessageKey string      `xml:"messageKey,omitempty"`
-	Message    string      `xml:"message,omitempty"`
 }
 
 // PublishRecordingsResponse represents the response from the publishRecordings API
 type PublishRecordingsResponse struct {
-	ReturnCode string `xml:"returncode"`
-	Published  bool   `xml:"published"`
-	MessageKey string `xml:"messageKey,omitempty"`
-	Message    string `xml:"message,omitempty"`
+	BaseResponseImpl
+	Published bool `xml:"published"`
 }
 
 // DeleteRecordingsResponse represents the response from the deleteRecordings API
 type DeleteRecordingsResponse struct {
-	ReturnCode string `xml:"returncode"`
-	Deleted    bool   `xml:"deleted"`
-	MessageKey string `xml:"messageKey,omitempty"`
-	Message    string `xml:"message,omitempty"`
+	BaseResponseImpl
+	Deleted bool `xml:"deleted"`
 }
 
 // UpdateRecordingsResponse represents the response from the updateRecordings API
 type UpdateRecordingsResponse struct {
-	ReturnCode string `xml:"returncode"`
-	Updated    bool   `xml:"updated"`
-	MessageKey string `xml:"messageKey,omitempty"`
-	Message    string `xml:"message,omitempty"`
+	BaseResponseImpl
+	Updated bool `xml:"updated"`
 }
