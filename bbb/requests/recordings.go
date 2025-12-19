@@ -1,3 +1,8 @@
+/*
+Package requests contains request structures for BigBlueButton API calls.
+This file defines the request types for recordings-related API operations such as getting, publishing, deleting, and updating recordings.
+*/
+
 package requests
 
 // GetRecordingsRequest represents the parameters for getting recordings

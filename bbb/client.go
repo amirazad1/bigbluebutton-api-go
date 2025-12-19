@@ -1,4 +1,10 @@
-// Package bbb provides a Go client for the BigBlueButton API.
+/*
+Package bbb provides a Go client for the BigBlueButton API.
+
+This file contains the core Client struct and methods for initializing the client,
+configuring HTTP options, generating checksums, and making HTTP requests.
+*/
+
 package bbb
 
 import (
@@ -30,10 +36,10 @@ func NewClient(baseURL, secret string, options ...Option) (*Client, error) {
 	if !strings.HasSuffix(baseURL, "/") {
 		baseURL += "/"
 	}
-	
+
 	if !strings.HasSuffix(baseURL, "api/") {
 		baseURL += "api/"
-	}	
+	}
 
 	// Create default client
 	c := &Client{
@@ -80,51 +86,51 @@ func (c *Client) generateChecksum(apiCall string, params url.Values) string {
 
 // doRequest performs an HTTP request to the BigBlueButton API.
 func (c *Client) doRequest(ctx context.Context, action string, params url.Values, result interface{}) error {
-    // Build the URL with the correct API path
-    u := fmt.Sprintf("%s%s", c.baseURL, action)
-    
-    // Add checksum to parameters
-    checksum := c.generateChecksum(action, params)
-    params.Set("checksum", checksum)
-    
-    // Build the full URL with query parameters
-    fullURL := fmt.Sprintf("%s?%s", u, params.Encode())
-    
-    // Print the URL for debugging (remove in production)
-    fmt.Printf("Making request to: %s\n", fullURL)
-    
-    // Create the request
-    req, err := http.NewRequestWithContext(ctx, "GET", fullURL, nil)
-    if err != nil {
-        return fmt.Errorf("creating request: %w", err)
-    }
-    
-    // Make the request
-    resp, err := c.httpClient.Do(req)
-    if err != nil {
-        return fmt.Errorf("making request: %w", err)
-    }
-    defer resp.Body.Close()
-    
-    // Read the response body for error details
-    body, err := ioutil.ReadAll(resp.Body)
-    if err != nil {
-        return fmt.Errorf("reading response body: %w", err)
-    }
-    
-    // Print the response status and body for debugging
-    fmt.Printf("Response Status: %d\n", resp.StatusCode)
-    fmt.Printf("Response Body: %s\n", string(body))
-    
-    // Check status code
-    if resp.StatusCode != http.StatusOK {
-        return fmt.Errorf("unexpected status code: %d, response: %s", resp.StatusCode, string(body))
-    }
-    
-    // Parse the XML response
-    if err := xml.Unmarshal(body, result); err != nil {
-        return fmt.Errorf("parsing response: %w, response body: %s", err, string(body))
-    }
-    
-    return nil
+	// Build the URL with the correct API path
+	u := fmt.Sprintf("%s%s", c.baseURL, action)
+
+	// Add checksum to parameters
+	checksum := c.generateChecksum(action, params)
+	params.Set("checksum", checksum)
+
+	// Build the full URL with query parameters
+	fullURL := fmt.Sprintf("%s?%s", u, params.Encode())
+
+	// Print the URL for debugging (remove in production)
+	fmt.Printf("Making request to: %s\n", fullURL)
+
+	// Create the request
+	req, err := http.NewRequestWithContext(ctx, "GET", fullURL, nil)
+	if err != nil {
+		return fmt.Errorf("creating request: %w", err)
+	}
+
+	// Make the request
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("making request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Read the response body for error details
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("reading response body: %w", err)
+	}
+
+	// Print the response status and body for debugging
+	fmt.Printf("Response Status: %d\n", resp.StatusCode)
+	fmt.Printf("Response Body: %s\n", string(body))
+
+	// Check status code
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code: %d, response: %s", resp.StatusCode, string(body))
+	}
+
+	// Parse the XML response
+	if err := xml.Unmarshal(body, result); err != nil {
+		return fmt.Errorf("parsing response: %w, response body: %s", err, string(body))
+	}
+
+	return nil
 }

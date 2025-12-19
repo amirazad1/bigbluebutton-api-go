@@ -1,3 +1,8 @@
+/*
+Package bbb provides functionality for managing BigBlueButton webhooks.
+This file contains methods for creating, listing, updating, and destroying webhooks.
+*/
+
 package bbb
 
 import (

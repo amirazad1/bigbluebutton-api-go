@@ -1,3 +1,8 @@
+/*
+Package requests contains request structures for BigBlueButton API calls.
+This file defines the request types for webhook-related API operations such as creating, listing, updating, and destroying webhooks.
+*/
+
 package requests
 
 // CreateHookRequest represents the parameters for creating a webhook

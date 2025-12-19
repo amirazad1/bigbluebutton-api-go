@@ -1,3 +1,8 @@
+/*
+Package bbb provides functionality for managing BigBlueButton recordings.
+This file contains methods for retrieving, publishing, deleting, and updating recordings.
+*/
+
 package bbb
 
 import (

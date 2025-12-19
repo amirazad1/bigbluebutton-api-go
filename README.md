@@ -3,28 +3,37 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/amirazad1/bigbluebutton-api-go.svg)](https://pkg.go.dev/github.com/amirazad1/bigbluebutton-api-go)
 [![Go Report Card](https://goreportcard.com/badge/github.com/amirazad1/bigbluebutton-api-go)](https://goreportcard.com/report/github.com/amirazad1/bigbluebutton-api-go)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Test Coverage](https://api.codeclimate.com/v1/badges/.../test_coverage)](https://codeclimate.com/github/amirazad1/bigbluebutton-api-go/test_coverage)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/amirazad1/bigbluebutton-api-go)](https://golang.org/)
 
-A Go client library for interacting with the BigBlueButton API.
+A comprehensive, type-safe Go client library for interacting with the BigBlueButton API, designed for reliability, performance, and ease of use.
 
-## Features
+## ✨ Features
 
-- Full support for BigBlueButton API v2.4+
-- Thread-safe client implementation
-- Context support for timeouts and cancellation
-- Comprehensive error handling
-- Well-documented code with examples
-- 100% test coverage
-- Full meeting management (create, join, end, get info)
-- Complete recordings management
-- Webhooks support for event notifications
+- **Full API Coverage**: Complete implementation of BigBlueButton API v2.4+
+- **Thread-Safe**: Safe for concurrent use by multiple goroutines
+- **Context Support**: Built-in support for timeouts and request cancellation
+- **Robust Error Handling**: Comprehensive error types and messages
+- **Well-Documented**: Extensive GoDoc with practical examples
+- **High Test Coverage**: Thoroughly tested with 100% code coverage
+- **Modular Design**: Clean separation of concerns with `requests` and `responses` packages
+- **Webhook Support**: Full support for BigBlueButton webhooks
+- **No External Dependencies**: Lightweight and dependency-free
 
-## Installation
+## 📦 Installation
 
 ```bash
 go get github.com/amirazad1/bigbluebutton-api-go
 ```
 
-## Quick Start
+## 🚀 Quick Start
+
+### Prerequisites
+- Go 1.16 or higher
+- A running BigBlueButton server (v2.4+)
+- API secret from your BigBlueButton server
+
+### Basic Usage
 
 ```go
 package main
@@ -40,53 +49,93 @@ import (
 )
 
 func main() {
-	// Initialize client
+	// Initialize client with custom timeout
 	client, err := bbb.NewClient(
-		"https://domain/bigbluebutton",
-		"secret-key",
-		bbb.WithTimeout(10*time.Second),
+		"https://your-bbb-server/bigbluebutton", // Your BigBlueButton server URL
+		"your-api-secret-here",                   // Your API secret
+		bbb.WithTimeout(15*time.Second),          // Optional: Set custom timeout
 	)
 	if err != nil {
 		log.Fatalf("Failed to create client: %v", err)
-	}	
+	}
 
-	fmt.Printf("BigBlueButton Create Meeting API...\n")
-	meeting , err := client.CreateMeeting(context.Background(), &requests.CreateMeetingRequest{
-		Name:            "Team Meeting",
-		MeetingID:       "meeting-123",
-		AttendeePW:      "ap",
-		ModeratorPW:     "mp",
-		Welcome:         "Welcome to our team meeting!",
+	// Create a new meeting
+	meeting, err := client.CreateMeeting(context.Background(), &requests.CreateMeetingRequest{
+		Name:            "Team Planning Session",
+		MeetingID:       "unique-meeting-id-123",
+		AttendeePW:      "attendee-pass",
+		ModeratorPW:     "moderator-pass",
+		Welcome:         "Welcome to our planning meeting!",
 		Record:          true,
-		MaxParticipants: 50,
+		MaxParticipants: 25,
 		Meta: map[string]string{
-			"meeting-purpose": "weekly-sync",
+			"meeting-purpose": "sprint-planning",
+			"department":     "engineering",
 		},
 	})
+
 	if err != nil {
 		log.Fatalf("Failed to create meeting: %v", err)
 	}
-    fmt.Printf("Meeting created... \n"
-    fmt.Printf("Meeting ID: %s\n", meeting.MeetingID)
-	fmt.Printf("BigBlueButton Join Meeting API...\n")
+
+	// Generate join URL for moderator
 	joinURL, err := client.JoinMeeting(context.Background(), &requests.JoinMeetingRequest{
 		MeetingID: meeting.MeetingID,
-		Password:  "mp", // Moderator password (use "ap" for attendees)
-		FullName:  "John Doe",
-		UserID:    "user-123",
+		Password:  "moderator-pass",
+		FullName:  "Jane Doe",
+		UserID:    "user-456",
 		UserData: map[string]string{
-			"role": "moderator",
+			"role":     "moderator",
+			"presence": "present",
 		},
 	})
-	fmt.Printf("Join Url: %s\n", joinURL)
+
 	if err != nil {
 		log.Fatalf("Failed to generate join URL: %v", err)
 	}
-}
 
+	fmt.Printf("Meeting created successfully!\n")
+	fmt.Printf("Meeting ID: %s\n", meeting.MeetingID)
+	fmt.Printf("Join URL: %s\n", joinURL)
+}
 ```
 
-## API Coverage
+## 🔧 Configuration
+
+### Client Options
+
+The client supports various configuration options:
+
+```go
+import (
+	"net/http"
+	"time"
+
+	"github.com/amirazad1/bigbluebutton-api-go/bbb"
+)
+
+// 1. With custom HTTP client
+customClient := &http.Client{
+	Timeout: 20 * time.Second,
+	// Add custom transport, timeouts, etc.
+}
+
+// 2. With custom timeout
+client, _ := bbb.NewClient(
+	"https://your-bbb-server/bigbluebutton",
+	"your-api-secret",
+	bbb.WithTimeout(30*time.Second),      // Set request timeout
+)
+
+// 3. With custom HTTP client
+client, _ := bbb.NewClient(
+	"https://your-bbb-server/bigbluebutton",
+	"your-api-secret",
+	bbb.WithHTTPClient(customClient),     // Use custom HTTP client
+)
+```
+
+## 📚 API Coverage
 
 ### Meetings
 - [x] Create meeting

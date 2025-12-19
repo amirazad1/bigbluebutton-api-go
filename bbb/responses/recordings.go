@@ -1,3 +1,8 @@
+/*
+Package responses contains response structures for BigBlueButton API calls.
+This file defines the response types for recordings-related API operations such as get, publish, delete, and update recordings.
+*/
+
 package responses
 
 // RecordingFormat represents a recording format in the API response

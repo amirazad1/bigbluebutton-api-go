@@ -1,3 +1,8 @@
+/*
+Package responses contains response structures for BigBlueButton API calls.
+This file defines the response types for webhook-related API operations such as create, list, destroy, and update webhooks.
+*/
+
 package responses
 
 // CreateHookResponse represents the response from creating a webhook

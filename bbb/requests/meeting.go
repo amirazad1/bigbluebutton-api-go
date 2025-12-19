@@ -1,3 +1,8 @@
+/*
+Package requests contains request structures for BigBlueButton API calls.
+This file defines the request types for meeting-related API operations such as creating, joining, and ending meetings.
+*/
+
 package requests
 
 // CreateMeetingRequest represents the parameters for creating a new meeting

@@ -1,3 +1,8 @@
+/*
+Package responses contains response structures for BigBlueButton API calls.
+This file defines the response types for meeting-related API operations such as create, join, end, get info, and list meetings.
+*/
+
 package responses
 
 // CreateMeetingResponse represents the response from the create meeting API

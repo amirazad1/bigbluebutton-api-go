@@ -1,3 +1,8 @@
+/*
+Package bbb provides functionality for managing BigBlueButton meetings.
+This file contains methods for creating, joining, ending, and retrieving information about meetings.
+*/
+
 package bbb
 
 import (
