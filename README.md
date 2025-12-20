@@ -3,7 +3,6 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/amirazad1/bigbluebutton-api-go.svg)](https://pkg.go.dev/github.com/amirazad1/bigbluebutton-api-go)
 [![Go Report Card](https://goreportcard.com/badge/github.com/amirazad1/bigbluebutton-api-go)](https://goreportcard.com/report/github.com/amirazad1/bigbluebutton-api-go)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Test Coverage](https://api.codeclimate.com/v1/badges/.../test_coverage)](https://codeclimate.com/github/amirazad1/bigbluebutton-api-go/test_coverage)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/amirazad1/bigbluebutton-api-go)](https://golang.org/)
 
 A comprehensive, type-safe Go client library for interacting with the BigBlueButton API, designed for reliability, performance, and ease of use.
